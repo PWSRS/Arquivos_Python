@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard de Ocorrências</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    
+    <style>
+      canvas {
+        max-height: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-4">
+      <h2 class="mb-4">Dashboard de Ocorrências</h2>
+
+      <!-- Filtros -->
+      <form id="filtros" class="row g-3">
+        <div class="col-md-2">
+          <label for="data_inicio" class="form-label">Data Início</label>
+          <input
+            type="date"
+            id="data_inicio"
+            name="data_inicio"
+            class="form-control"
+          />
+        </div>
+        <div class="col-md-2">
+          <label for="data_fim" class="form-label">Data Fim</label>
+          <input
+            type="date"
+            id="data_fim"
+            name="data_fim"
+            class="form-control"
+          />
+        </div>
+        <div class="col-md-2">
+          <label for="sexo" class="form-label">Sexo</label>
+          <select id="sexo" name="sexo" class="form-select">
+            <option value="">Todos</option>
+            {% for s in sexos %}
+            <option value="{{ s.id }}">{{ s.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="tipo" class="form-label">Tipo</label>
+          <select id="tipo" name="tipo" class="form-select">
+            <option value="">Todos</option>
+            {% for t in tipos %}
+            <option value="{{ t.id }}">{{ t.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="cidade" class="form-label">Cidade</label>
+          <select id="cidade" name="cidade" class="form-select">
+            <option value="">Todas</option>
+            {% for c in cidades %}
+            <option value="{{ c.id }}">{{ c.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="idade" class="form-label">Faixa Etária</label>
+          <select id="idade" name="idade" class="form-select">
+            <option value="">Todas</option>
+            <option value="0-18">0-18</option>
+            <option value="19-30">19-30</option>
+            <option value="31-45">31-45</option>
+            <option value="46-60">46-60</option>
+            <option value="61-70">46-60</option>
+            <option value="71+">61+</option>
+          </select>
+        </div>
+        <div class="col-md-12 text-end">
+          <button type="submit" class="btn btn-primary mt-2">Atualizar</button>
+        </div>
+      </form>
+
+      <hr class="my-4" />
+
+      <!-- Gráficos -->
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <h5>Ocorrências por Mês</h5>
+          <canvas id="graficoMes"></canvas>
+        </div>
+        <div class="col-md-6 mb-4">
+          <h5>Ocorrências por Sexo</h5>
+          <canvas id="graficoSexo"></canvas>
+        </div>
+        <div class="col-md-6 mb-4">
+          <h5>Ocorrências por Faixa Etária</h5>
+          <canvas id="graficoIdade"></canvas>
+        </div>
+        <div class="col-md-6 mb-4">
+          <h5>Top 10 Cidades</h5>
+          <canvas id="graficoCidade"></canvas>
+        </div>
+      </div>
+    </div>
+    <script>
+      let graficoMes, graficoSexo, graficoIdade, graficoCidade;
+    
+      // Função para gerar cores com base no valor
+      function getColorForValue(value, maxValue) {
+        let ratio = value / maxValue;
+        if (ratio > 0.66) return "#FF6347"; // Vermelho
+        if (ratio > 0.33) return "#FFD700"; // Amarelo
+        return "#32CD32"; // Verde
+      }
+    
+      // Função para atribuir cores fixas ao gráfico de sexo
+      function getSexoColor(label) {
+        if (label.toLowerCase() === "masculino") {
+          return "#1E90FF"; // Azul para Masculino
+        } else if (label.toLowerCase() === "feminino") {
+          return "#FF69B4"; // Rosa para Feminino
+        }
+        return "#32CD32"; // Verde para Outros
+      }
+    
+      function criarOuAtualizarGrafico(ctx, tipo, dados, cor = "indigo") {
+        if (ctx.chart) ctx.chart.destroy();
+        ctx.chart = new Chart(ctx, {
+          type: tipo,
+          data: {
+            labels: dados.labels,
+            datasets: [
+              {
+                label: "Total",
+                data: dados.dados,
+                backgroundColor: cor,
+                borderColor: cor,
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              datalabels: {
+                display: true, // Habilitar a exibição dos valores
+                color: "white", // Cor do texto dos valores
+                font: {
+                  weight: "bold", // Estilo da fonte
+                  size: 12, // Tamanho da fonte
+                },
+                formatter: (value) => value, // Exibe os valores diretamente
+                padding: 4,
+                backgroundColor: "black", // Fundo para o texto dos valores
+                borderRadius: 3,
+                borderWidth: 2,
+                borderColor: "white",
+              },
+            },
+          },
+        });
+      }
+    
+      function atualizarGraficos() {
+        const params = new URLSearchParams(
+          new FormData(document.getElementById("filtros"))
+        );
+    
+        fetch("{% url 'dashboard_dados' %}?" + params)
+          .then((response) => response.json())
+          .then((data) => {
+            // Gráfico de Ocorrências por Mês (Barra) - Cores dinâmicas
+            const maxMesValue = Math.max(...data.mes.dados);
+            const coresMes = data.mes.dados.map(value => getColorForValue(value, maxMesValue));
+            criarOuAtualizarGrafico(
+              document.getElementById("graficoMes"),
+              "bar",
+              data.mes,
+              coresMes
+            );
+    
+            // Gráfico de Ocorrências por Sexo (Pizza) - Cores fixas
+            const coresSexo = data.sexo.labels.map(label => getSexoColor(label));
+            criarOuAtualizarGrafico(
+              document.getElementById("graficoSexo"),
+              "pie",
+              data.sexo,
+              coresSexo  // Cores definidas para o gráfico de sexo
+            );
+    
+            // Gráfico de Ocorrências por Faixa Etária (Barra) - Cores dinâmicas
+            const maxIdadeValue = Math.max(...data.idade.dados);
+            const coresIdade = data.idade.dados.map(value => getColorForValue(value, maxIdadeValue));
+            criarOuAtualizarGrafico(
+              document.getElementById("graficoIdade"),
+              "bar",
+              data.idade,
+              coresIdade
+            );
+    
+            // Gráfico de Top 10 Cidades (Barra) - Cores dinâmicas
+            const maxCidadeValue = Math.max(...data.cidade.dados);
+            const coresCidade = data.cidade.dados.map(value => getColorForValue(value, maxCidadeValue));
+            criarOuAtualizarGrafico(
+              document.getElementById("graficoCidade"),
+              "bar",
+              data.cidade,
+              coresCidade
+            );
+          });
+      }
+    
+      document
+        .getElementById("filtros")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          atualizarGraficos();
+        });
+    
+      // Inicial
+      atualizarGraficos();
+    </script>
+    
+  </body>
+</html>
+{% endblock %}

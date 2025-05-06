@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-4">
+  <div class="alert alert-warning">
+    <h2>{% if form.instance.pk %}Editar Tipo{% else %}Novo Tipo{% endif %}</h2>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        {{ form.nome.label_tag }} {{ form.nome }} {% if form.nome.errors %}
+        <div class="text-danger">{{ form.nome.errors }}</div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Salvar</button>
+      <a href="{% url 'tipo_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

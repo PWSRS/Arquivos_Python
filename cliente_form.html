@@ -1,0 +1,21 @@
+<!-- ocorrencias/templates/ocorrencias/cliente_form.html -->
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-4">
+  <div class="alert alert-warning">
+    <h2>
+      {% if form.instance.pk %}Editar{% else %}Novo{% endif %} Agente
+    </h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %} {{ form.as_p }}
+      <button type="submit" class="btn btn-success">Salvar</button>
+      <a href="{% url 'cliente_list' %}" class="btn btn-secondary"
+      >Cancelar</a
+    >
+    </form>
+  </div>
+</div>
+{% endblock %}
+

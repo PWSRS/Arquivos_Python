@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+  <div class="alert alert-warning">
+    <h2>
+      {% if form.instance.pk %}Editar{% else %}Nova{% endif %} Causa do Fato
+    </h2>
+    <form method="post">
+      {% csrf_token %} {{ form.as_p }}
+      <button type="submit" class="btn btn-success">Salvar</button>
+      <a href="{% url 'causafato_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

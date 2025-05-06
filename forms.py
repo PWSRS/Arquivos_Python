@@ -15,6 +15,7 @@ from .models import (
     TraficoPosse,
     Orcrim,
     MeioEmpregado,
+    Cliente,
 )
 from decimal import Decimal, InvalidOperation
 
@@ -167,3 +168,9 @@ class MeioEmpregadoForm(forms.ModelForm):
     class Meta:
         model = MeioEmpregado
         fields = ["descricao"]
+
+
+class ClienteForm(forms.ModelForm):
+    class Meta:
+        model = Cliente
+        fields = ["nome", "email", "telefone", "foto"]

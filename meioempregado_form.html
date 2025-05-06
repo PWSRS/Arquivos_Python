@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-4">
+  <div class="alert alert-warning">
+    <h2>{{ view.object.pk|yesno:"Editar Meio Empregado,Cadastrar novo Meio Empregado" }}</h2>
+    <form method="post">
+      {% csrf_token %} {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Salvar</button>
+      <a href="{% url 'meioempregado_list' %}" class="btn btn-secondary"
+        >Cancelar</a
+      >
+    </form>
+  </div>
+</div>
+{% endblock %}

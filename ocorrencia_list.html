@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container mb-3">
+  <div class="alert alert-info">
+      <h2>Crimes Violentos Letais Intencionais (CVLI)</h2>
+      {% if request.user.is_superuser %}
+      <a href="{% url 'ocorrencia_create' %}" class="btn btn-success"
+        >Nova Ocorrência</a
+      >
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="get" class="mb-3" id="form-filtro">
+    <div class="input-group">
+      <input
+        type="text"
+        id="filtro-nome"
+        placeholder="Buscar por nome..."
+        class="form-control"
+      />
+    </div>
+  </form>
+
+  {% if ocorrencias %}
+  <table class="table table-bordered table-striped table-hover">
+    <thead>
+      <tr>
+        <th>Ano</th>
+        <th>Nome</th>
+        <th>Idade</th>
+        <th>Sexo</th>
+        <th>Cidade</th>
+        <th>Tipo</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabela-ocorrencias">
+      {% include "ocorrencias/ocorrencia_tabela_parcial.html" %}
+    </tbody>
+  </table>
+
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation">
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num >= page_obj.number|add:-3 and num <= page_obj.number|add:3 %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Próxima">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+      {% endif %}
+{% else %}
+  <p>Nenhuma ocorrência encontrada.</p>
+{% endif %}
+</div>
+{% endblock %}
+
+<script>
+  // Impede envio do formulário ao pressionar Enter
+  document
+    .getElementById("form-filtro")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+    });
+
+  // Filtro dinâmico ao digitar
+  document.getElementById("filtro-nome").addEventListener("input", function () {
+    const query = this.value;
+
+    fetch(`{% url 'ocorrencia-ajax-list' %}?q=${encodeURIComponent(query)}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Erro na resposta");
+        return response.json();
+      })
+      .then((data) => {
+        document.getElementById("tabela-ocorrencias").innerHTML = data.html;
+      })
+      .catch((error) => {
+        console.error("Erro na requisição:", error);
+      });
+  });
+</script>

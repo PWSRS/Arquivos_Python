@@ -1,0 +1,163 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+
+<div class="container mt-4">
+  <div class="alert alert-info">
+    <h2>Detalhes da Ocorrência</h2>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <table class="table table-bordered table-striped">
+        <tbody>
+          <tr>
+            <th>Ano</th>
+            <td>{{ ocorrencia.ano }}</td>
+          </tr>
+          <tr>
+            <th>Nome</th>
+            <td>{{ ocorrencia.nome }}</td>
+          </tr>
+          <tr>
+            <th>Idade</th>
+            <td>{{ ocorrencia.idade }}</td>
+          </tr>
+          <tr>
+            <th>Faixa Etária</th>
+            <td>{{ ocorrencia.faixa_etaria }}</td>
+          </tr>
+          <tr>
+            <th>Profissão</th>
+            <td>{{ ocorrencia.profissao }}</td>
+          </tr>
+          <tr>
+            <th>Sexo</th>
+            <td>{{ ocorrencia.sexo }}</td>
+          </tr>
+          <tr>
+            <th>Documento</th>
+            <td>{{ ocorrencia.documento }}</td>
+          </tr>
+          <tr>
+            <th>Endereço do Fato</th>
+            <td>{{ ocorrencia.endereco_fato }}</td>
+          </tr>
+          <tr>
+            <th>Número</th>
+            <td>{{ ocorrencia.nr }}</td>
+          </tr>
+          <tr>
+            <th>Bairro</th>
+            <td>{{ ocorrencia.bairro }}</td>
+          </tr>
+          <tr>
+            <th>Cidade</th>
+            <td>{{ ocorrencia.cidade }}</td>
+          </tr>
+          <tr>
+            <th>OPM</th>
+            <td>{{ ocorrencia.opm }}</td>
+          </tr>
+          <tr>
+            <th>Data do Fato</th>
+            <td>{{ ocorrencia.data_fato }}</td>
+          </tr>
+          <tr>
+            <th>Mês</th>
+            <td>{{ ocorrencia.mes }}</td>
+          </tr>
+          <tr>
+            <th>Hora</th>
+            <td>{{ ocorrencia.hora }}</td>
+          </tr>
+          <tr>
+            <th>Intervalo</th>
+            <td>{{ ocorrencia.intervalo }}</td>
+          </tr>
+          <tr>
+            <th>Turno</th>
+            <td>{{ ocorrencia.turno }}</td>
+          </tr>
+          <tr>
+            <th>Dia da Semana</th>
+            <td>{{ ocorrencia.dia_semana }}</td>
+          </tr>
+          <tr>
+            <th>Tipo</th>
+            <td>{{ ocorrencia.tipo }}</td>
+          </tr>
+          <tr>
+            <th>Local do Óbito</th>
+            <td>{{ ocorrencia.local_obito }}</td>
+          </tr>
+          <tr>
+            <th>Cor de Pele</th>
+            <td>{{ ocorrencia.cor_pele }}</td>
+          </tr>
+          <tr>
+            <th>Possui Antecedentes</th>
+            <td>{{ ocorrencia.possui_antecedentes}}</td>
+          </tr>
+          <tr>
+            <th>Situação Carcerária</th>
+            <td>{{ ocorrencia.situacao_carceraria }}</td>
+          </tr>
+          <tr>
+            <th>Causa do Fato</th>
+            <td>{{ ocorrencia.causa_fato }}</td>
+          </tr>
+          <tr>
+            <th>Tráfico/Posse</th>
+            <td>{{ ocorrencia.trafico_posse }}</td>
+          </tr>
+          <tr>
+            <th>ORCRIM</th>
+            <td>{{ ocorrencia.orcrim }}</td>
+          </tr>
+          <tr>
+            <th>Latitude</th>
+            <td>{{ ocorrencia.latitude }}</td>
+          </tr>
+          <tr>
+            <th>Longitude</th>
+            <td>{{ ocorrencia.longitude }}</td>
+          </tr>
+          <tr>
+            <th>Coordenadas Geográficas</th>
+            <td>{{ ocorrencia.coordenadas_geograficas }}</td>
+          </tr>
+          <tr>
+            <th>Histórico</th>
+            <td>{{ ocorrencia.historico }}</td>
+          </tr>
+          <tr>
+            <th>Órgão de Registro</th>
+            <td>{{ ocorrencia.orgao_registro }}</td>
+          </tr>
+          <tr>
+            <th>Ano de Registro</th>
+            <td>{{ ocorrencia.ano_registro }}</td>
+          </tr>
+          <tr>
+            <th>Número de Registro</th>
+            <td>{{ ocorrencia.numero_registro }}</td>
+          </tr>
+          <tr>
+            <th>Meio Empregado</th>
+            <td>{{ ocorrencia.meio_empregado }}</td>
+          </tr>
+          <tr>
+            <th>Nome do Autor</th>
+            <td>{{ ocorrencia.nome_autor }}</td>
+          </tr>
+          <tr>
+            <th>RG</th>
+            <td>{{ ocorrencia.rg_autor }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <a href="{% url 'ocorrencia_list' %}" class="btn btn-secondary">Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

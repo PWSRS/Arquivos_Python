@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.views import View
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Count
 from django.http import JsonResponse
 from django.views.generic import (
@@ -29,6 +29,7 @@ from .models import (
     CorPele,
     TraficoPosse,
     Turno,
+    Cliente,
 )
 from .forms import (
     OcorrenciaForm,
@@ -37,6 +38,7 @@ from .forms import (
     OrcrimForm,
     CausaFatoForm,
     MeioEmpregadoForm,
+    ClienteForm,
 )
 import pandas as pd
 from datetime import datetime
@@ -561,3 +563,39 @@ def dashboard_dados(request):
             "cidade": {"labels": cidade_labels, "dados": cidade_dados},
         }
     )
+
+
+def cliente_list(request):
+    clientes = Cliente.objects.all().order_by("nome")
+    return render(request, "ocorrencias/cliente_list.html", {"clientes": clientes})
+
+
+def cliente_create(request):
+    if request.method == "POST":
+        form = ClienteForm(
+            request.POST, request.FILES
+        )  # Não esquecer de usar request.FILES para imagens
+        if form.is_valid():
+            form.save()
+            return redirect("cliente_list")
+    else:
+        form = ClienteForm()
+    return render(request, "ocorrencias/cliente_form.html", {"form": form})
+
+
+def cliente_edit(request, pk):
+    cliente = get_object_or_404(Cliente, pk=pk)
+    if request.method == "POST":
+        form = ClienteForm(request.POST, request.FILES, instance=cliente)
+        if form.is_valid():
+            form.save()
+            return redirect("cliente_list")
+    else:
+        form = ClienteForm(instance=cliente)
+    return render(request, "ocorrencias/cliente_form.html", {"form": form})
+
+
+def cliente_delete(request, pk):
+    cliente = get_object_or_404(Cliente, pk=pk)
+    cliente.delete()
+    return redirect("cliente_list")
