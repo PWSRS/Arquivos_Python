@@ -2,12 +2,19 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
+from dados import carregar_ocorrencias
 
-# Carrega os dados
-df = pd.read_excel("cvli_formatado.xlsx")
+# Criar um dashboard interativo com filtros dinâmicos usando o Streamlit,
+# exibindo o mapa em tempo real baseado nas seleções feitas pelo usuário.
 
-# Converte a coluna 'Data do fato' para datetime
-df["Data do fato"] = pd.to_datetime(df["Data do fato"], errors="coerce")
+# Carrega os dados diretamente do banco
+df = carregar_ocorrencias()
+
+# Converte a coluna 'data' para datetime
+df["data"] = pd.to_datetime(df["data"], errors="coerce")
+
+# Extrai o ano para filtro
+df["ano"] = df["data"].dt.year
 
 # Título do dashboard
 st.title("📍 Mapa Interativo de Ocorrências CVLI")
@@ -17,52 +24,40 @@ with st.sidebar:
     st.header("Filtros")
 
     # Filtro por ANO
-    if "ANO" in df.columns:
-        ano_selecionado = st.selectbox(
-            "Ano", ["Todos"] + sorted(df["ANO"].dropna().astype(str).unique().tolist())
-        )
-        if ano_selecionado != "Todos":
-            df = df[df["ANO"].astype(str) == ano_selecionado]
+    ano_selecionado = st.selectbox(
+        "Ano", ["Todos"] + sorted(df["ano"].dropna().astype(str).unique().tolist())
+    )
+    if ano_selecionado != "Todos":
+        df = df[df["ano"].astype(str) == ano_selecionado]
 
     # Filtro por Cidade
-    if "Cidade" in df.columns:
-        cidade = st.selectbox(
-            "Cidade", ["Todas"] + sorted(df["Cidade"].dropna().unique())
-        )
-        if cidade != "Todas":
-            df = df[df["Cidade"] == cidade]
+    cidade = st.selectbox("Cidade", ["Todas"] + sorted(df["cidade"].dropna().unique()))
+    if cidade != "Todas":
+        df = df[df["cidade"] == cidade]
 
     # Filtro por Bairro
-    if "Bairro" in df.columns:
-        bairro = st.selectbox(
-            "Bairro", ["Todos"] + sorted(df["Bairro"].dropna().unique())
-        )
-        if bairro != "Todos":
-            df = df[df["Bairro"] == bairro]
+    bairro = st.selectbox("Bairro", ["Todos"] + sorted(df["bairro"].dropna().unique()))
+    if bairro != "Todos":
+        df = df[df["bairro"] == bairro]
 
     # Filtro por OPM
-    if "OPM" in df.columns:
-        opm = st.selectbox("OPM", ["Todos"] + sorted(df["OPM"].dropna().unique()))
-        if opm != "Todos":
-            df = df[df["OPM"] == opm]
+    opm = st.selectbox("OPM", ["Todos"] + sorted(df["opm"].dropna().unique()))
+    if opm != "Todos":
+        df = df[df["opm"] == opm]
 
     # Filtro por Tipo
-    if "Tipo" in df.columns:
-        tipo = st.selectbox("Tipo", ["Todos"] + sorted(df["Tipo"].dropna().unique()))
-        if tipo != "Todos":
-            df = df[df["Tipo"] == tipo]
+    tipo = st.selectbox("Tipo", ["Todos"] + sorted(df["tipo"].dropna().unique()))
+    if tipo != "Todos":
+        df = df[df["tipo"] == tipo]
 
-    # Filtro por intervalo de datas (baseado em 'Data do fato')
-    if "Data do fato" in df.columns:
-        data_min = df["Data do fato"].min()
-        data_max = df["Data do fato"].max()
-        data_inicio, data_fim = st.date_input(
-            "Intervalo de Datas", [data_min, data_max]
-        )
-        df = df[
-            (df["Data do fato"] >= pd.to_datetime(data_inicio))
-            & (df["Data do fato"] <= pd.to_datetime(data_fim))
-        ]
+    # Filtro por intervalo de datas
+    data_min = df["data"].min()
+    data_max = df["data"].max()
+    data_inicio, data_fim = st.date_input("Intervalo de Datas", [data_min, data_max])
+    df = df[
+        (df["data"] >= pd.to_datetime(data_inicio))
+        & (df["data"] <= pd.to_datetime(data_fim))
+    ]
 
 # Mostrar total filtrado
 st.subheader(f"Ocorrências encontradas: {len(df)}")
@@ -72,15 +67,15 @@ mapa = folium.Map(location=[-15.0, -50.0], zoom_start=5)
 
 # Adicionar marcadores
 for _, row in df.iterrows():
-    lat = row["Latitude"]
-    lon = row["Longitude"]
+    lat = row["latitude"]
+    lon = row["longitude"]
     if pd.notnull(lat) and pd.notnull(lon):
         popup_info = f"""
-        <b>Data:</b> {row.get('Data do fato', '')}<br>
-        <b>Tipo:</b> {row.get('Tipo', '')}<br>
-        <b>Cidade:</b> {row.get('Cidade', '')}<br>
-        <b>Bairro:</b> {row.get('Bairro', '')}<br>
-        <b>OPM:</b> {row.get('OPM', '')}
+        <b>Data:</b> {row.get('data', '')}<br>
+        <b>Tipo:</b> {row.get('tipo', '')}<br>
+        <b>Cidade:</b> {row.get('cidade', '')}<br>
+        <b>Bairro:</b> {row.get('bairro', '')}<br>
+        <b>OPM:</b> {row.get('opm', '')}
         """
         folium.Marker(
             location=[lat, lon],
