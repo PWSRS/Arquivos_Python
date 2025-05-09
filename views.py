@@ -279,7 +279,7 @@ class OcorrenciaListView(LoginRequiredMixin, ListView):
     model = Ocorrencia
     template_name = "ocorrencias/ocorrencia_list.html"
     context_object_name = "ocorrencias"
-    paginate_by = 10
+    paginate_by = 50
     ordering = ["-data_fato"]
 
     def get_queryset(self):
@@ -482,7 +482,7 @@ def dashboard_dados(request):
     sexo = request.GET.get("sexo")
     tipo = request.GET.get("tipo")
     cidade = request.GET.get("cidade")
-    faixa_idade = request.GET.get("idade")
+    faixa_idade = request.GET.get("faixa_etaria")
 
     ocorrencias = Ocorrencia.objects.all()
 
@@ -510,8 +510,8 @@ def dashboard_dados(request):
             pass
 
     # Gráfico por mês
-    mes_count = ocorrencias.values("mes").annotate(total=Count("id")).order_by("mes")
-    mes_labels = [item["mes"] for item in mes_count]
+    mes_count = ocorrencias.values("mes", "mes__nome").annotate(total=Count("id")).order_by("mes")
+    mes_labels = [item["mes__nome"] for item in mes_count]
     mes_dados = [item["total"] for item in mes_count]
 
     # Gráfico por sexo
@@ -521,27 +521,44 @@ def dashboard_dados(request):
 
     # Gráfico por faixa etária
     idade_faixas = {
-        "0-18": 0,
-        "19-30": 0,
-        "31-45": 0,
-        "46-60": 0,
-        "61-70": 0,
-        "71+": 0,
+        "0 até 10 anos": 0,
+        "11 até 20 anos": 0,
+        "21 até 30 anos": 0,
+        "31 até 40 anos": 0,
+        "41 até 50 anos": 0,
+        "51 até 60 anos": 0,
+        "61 até 70 anos": 0,
+        "71 até 80 anos": 0,
+        "81 até 90 anos": 0,
+        "91 até 100 anos": 0,
+        "Prejudicado": 0,
     }
     for o in ocorrencias:
-        idade = o.idade or 0
-        if idade <= 18:
-            idade_faixas["0-18"] += 1
+        idade = o.idade
+        if idade is None:
+            idade_faixas["Prejudicado"] += 1
+        elif idade <= 10:
+            idade_faixas["0 até 10 anos"] += 1
+        elif idade <= 20:
+            idade_faixas["11 até 20 anos"] += 1
         elif idade <= 30:
-            idade_faixas["19-30"] += 1
-        elif idade <= 45:
-            idade_faixas["31-45"] += 1
+            idade_faixas["21 até 30 anos"] += 1
+        elif idade <= 40:
+            idade_faixas["31 até 40 anos"] += 1
+        elif idade <= 50:
+            idade_faixas["41 até 50 anos"] += 1
         elif idade <= 60:
-            idade_faixas["46-60"] += 1
+            idade_faixas["51 até 60 anos"] += 1
         elif idade <= 70:
-            idade_faixas["61-70"] += 1
+            idade_faixas["61 até 70 anos"] += 1
+        elif idade <= 80:
+            idade_faixas["71 até 80 anos"] += 1
+        elif idade <= 90:
+            idade_faixas["81 até 90 anos"] += 1
+        elif idade <= 100:
+            idade_faixas["91 até 100 anos"] += 1
         else:
-            idade_faixas["71+"] += 1
+            idade_faixas["Prejudicado"] += 1
 
     # Gráfico por cidade
     cidade_count = (

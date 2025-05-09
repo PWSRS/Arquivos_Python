@@ -12,6 +12,10 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script>
+      // Registra o plugin ChartDataLabels globalmente
+      Chart.register(ChartDataLabels);
+    </script>
    
     <style>
       canvas {
@@ -73,15 +77,20 @@
           </select>
         </div>
         <div class="col-md-2">
-          <label for="idade" class="form-label">Faixa Etária</label>
-          <select id="idade" name="idade" class="form-select">
+          <label for="faixa_etaria" class="form-label">Faixa Etária</label>
+          <select id="faixa_etaria" name="faixa_etaria" class="form-select">
             <option value="">Todas</option>
-            <option value="0-18">0-18</option>
-            <option value="19-30">19-30</option>
-            <option value="31-45">31-45</option>
-            <option value="46-60">46-60</option>
-            <option value="61-70">46-60</option>
-            <option value="71+">61+</option>
+                <option value="0-10">0 até 10 anos</option>
+                <option value="11-20">11 até 20 anos</option>
+                <option value="21-30">21 até 30 anos</option>
+                <option value="31-40">31 até 40 anos</option>
+                <option value="41-50">41 até 50 anos</option>
+                <option value="51-60">51 até 60 anos</option>
+                <option value="61-70">61 até 70 anos</option>
+                <option value="71-80">71 até 80 anos</option>
+                <option value="81-90">81 até 90 anos</option>
+                <option value="91-100">91 até 100 anos</option>
+                <option value="PREJUDICADO">Prejudicado</option>
           </select>
         </div>
         <div class="col-md-12 text-end">
@@ -114,12 +123,52 @@
     <script>
       let graficoMes, graficoSexo, graficoIdade, graficoCidade;
     
-      // Função para gerar cores com base no valor
+      // Função para gerar cores com base no valor (gradiente suave)
       function getColorForValue(value, maxValue) {
         let ratio = value / maxValue;
-        if (ratio > 0.66) return "#EC5454"; // Vermelho
-        if (ratio > 0.33) return "#FFD700"; // Amarelo
-        return "#2BA87E"; // Verde
+        
+        // Cores base para o gradiente
+        const verde = { r: 43, g: 168, b: 126 };    // #2BA87E
+        const amarelo = { r: 255, g: 215, b: 0 };   // #FFD700
+        const vermelho = { r: 236, g: 84, b: 84 };  // #EC5454
+        
+        let r, g, b;
+        
+        if (ratio <= 0.33) {
+          // Gradiente de verde (mais claro) para verde (mais escuro)
+          const subRatio = ratio / 0.33;
+          r = verde.r;
+          g = verde.g;
+          b = verde.b;
+          
+          // Ajusta a intensidade para criar variação
+          const fator = 0.7 + (0.3 * subRatio);
+          r = Math.round(r * fator);
+          g = Math.round(g * fator);
+          b = Math.round(b * fator);
+        } 
+        else if (ratio <= 0.66) {
+          // Gradiente de verde para amarelo
+          const subRatio = (ratio - 0.33) / 0.33;
+          r = Math.round(verde.r + subRatio * (amarelo.r - verde.r));
+          g = Math.round(verde.g + subRatio * (amarelo.g - verde.g));
+          b = Math.round(verde.b + subRatio * (amarelo.b - verde.b));
+        } 
+        else {
+          // Gradiente de amarelo para vermelho
+          const subRatio = (ratio - 0.66) / 0.34;
+          r = Math.round(amarelo.r + subRatio * (vermelho.r - amarelo.r));
+          g = Math.round(amarelo.g + subRatio * (vermelho.g - amarelo.g));
+          b = Math.round(amarelo.b + subRatio * (vermelho.b - amarelo.b));
+        }
+        
+        // Garante que os valores estão dentro do intervalo válido (0-255)
+        r = Math.min(255, Math.max(0, r));
+        g = Math.min(255, Math.max(0, g));
+        b = Math.min(255, Math.max(0, b));
+        
+        // Retorna a cor em formato hexadecimal
+        return `rgb(${r}, ${g}, ${b})`;
       }
     
       // Função para atribuir cores fixas ao gráfico de sexo
@@ -164,6 +213,14 @@
             },
             plugins: {
               legend: { display: false },
+              tooltip: {
+                enabled: true,
+                callbacks: {
+                  label: function(context) {
+                    return `Total: ${context.raw}`;
+                  }
+                }
+              },
               datalabels: {
                 display: true, // Habilitar a exibição dos valores
                 color: "white", // Cor do texto dos valores
@@ -173,10 +230,35 @@
                 },
                 formatter: (value) => value, // Exibe os valores diretamente
                 padding: 4,
-                backgroundColor: "black", // Fundo para o texto dos valores
+                backgroundColor: "rgba(70, 70, 70, 0.7)", // Fundo semi-transparente mais suave
                 borderRadius: 3,
-                borderWidth: 2,
-                borderColor: "white",
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.7)",
+                // Configurações específicas para diferentes tipos de gráficos
+                align: function(context) {
+                  // Para gráficos de pizza, centraliza os rótulos
+                  if (context.chart.config.type === 'pie') {
+                    return 'center';
+                  }
+                  // Para gráficos de barra, coloca os rótulos no topo
+                  return 'top';
+                },
+                anchor: function(context) {
+                  // Para gráficos de pizza, centraliza os rótulos
+                  if (context.chart.config.type === 'pie') {
+                    return 'center';
+                  }
+                  // Para gráficos de barra, ancora no final da barra
+                  return 'end';
+                },
+                offset: function(context) {
+                  // Para gráficos de pizza, não aplica offset
+                  if (context.chart.config.type === 'pie') {
+                    return 0;
+                  }
+                  // Para gráficos de barra, aplica um pequeno offset para cima
+                  return -5;
+                },
               },
             },
           },

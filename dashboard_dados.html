@@ -1,0 +1,90 @@
+def dashboard_dados(request):
+    qs = Ocorrencia.objects.all()
+
+    # Filtros
+    data_inicio = request.GET.get('data_inicio')
+    data_fim = request.GET.get('data_fim')
+    sexo = request.GET.get('sexo')
+    tipo = request.GET.get('tipo')
+    cidade = request.GET.get('cidade')
+    idade = request.GET.get('idade')
+
+    if data_inicio:
+        qs = qs.filter(data__gte=parse_date(data_inicio))
+    if data_fim:
+        qs = qs.filter(data__lte=parse_date(data_fim))
+    if sexo:
+        qs = qs.filter(sexo_id=sexo)
+    if tipo:
+        qs = qs.filter(tipo_id=tipo)
+    if cidade:
+        qs = qs.filter(cidade_id=cidade)
+    if idade:
+        faixa = idade.split('-')
+        if faixa[-1] == '+':
+            qs = qs.filter(idade__gte=int(faixa[0]))
+        else:
+            qs = qs.filter(idade__gte=int(faixa[0]), idade__lte=int(faixa[1]))
+
+    # Gráfico por mês
+    por_mes = (
+        qs.annotate(mes=TruncMonth('data'))
+        .values('mes')
+        .annotate(total=Count('id'))
+        .order_by('mes')
+    )
+    labels_mes = [d['mes'].strftime('%b/%Y') for d in por_mes]
+    dados_mes = [d['total'] for d in por_mes]
+
+    # Gráfico por sexo
+    por_sexo = (
+        qs.values('sexo__nome')
+        .annotate(total=Count('id'))
+        .order_by('sexo__nome')
+    )
+    labels_sexo = [d['sexo__nome'] for d in por_sexo]
+    dados_sexo = [d['total'] for d in por_sexo]
+
+    # Gráfico por faixa etária
+    faixas = {
+        '0-10': (0, 10),
+        '11-20': (11, 20),
+        '21-30': (21, 30),
+        '31-40': (31, 40),
+        '41-50': (41, 50),
+        '51-60': (51, 60),
+        '61-70': (61, 70),
+        '71-80': (71, 80),
+        '81-90': (81, 90),
+        '91-100': (91, 100),
+        'Prejudicado': (None, None)  # Prejudicado (não tem faixa específica)
+    }
+
+    labels_idade = []
+    dados_idade = []
+
+    for faixa, (min_idade, max_idade) in faixas.items():
+        if faixa == 'PREJUDICADO':
+            # Para "PREJUDICADO", contamos separadamente (não é uma faixa etária numérica)
+            count = qs.filter(idade__isnull=True).count()  # Ajuste conforme sua lógica
+        else:
+            count = qs.filter(idade__gte=min_idade, idade__lte=max_idade).count()
+
+        labels_idade.append(faixa)
+        dados_idade.append(count)
+
+    # Gráfico por cidade
+    por_cidade = (
+        qs.values('cidade__nome')
+        .annotate(total=Count('id'))
+        .order_by('-total')[:10]
+    )
+    labels_cidade = [d['cidade__nome'] for d in por_cidade]
+    dados_cidade = [d['total'] for d in por_cidade]
+
+    return JsonResponse({
+        'mes': {'labels': labels_mes, 'dados': dados_mes},
+        'sexo': {'labels': labels_sexo, 'dados': dados_sexo},
+        'idade': {'labels': labels_idade, 'dados': dados_idade},
+        'cidade': {'labels': labels_cidade, 'dados': dados_cidade},
+    })

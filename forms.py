@@ -36,6 +36,7 @@ class OcorrenciaForm(forms.ModelForm):
             ),
             "latitude": forms.TextInput(attrs={"placeholder": "Ex: -31.7476"}),
             "longitude": forms.TextInput(attrs={"placeholder": "Ex: -52.3155"}),
+            "rg_autor": forms.TextInput(attrs={"placeholder": "Apenas números"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -45,6 +46,10 @@ class OcorrenciaForm(forms.ModelForm):
         for field in self.fields.values():
             if field.widget.__class__ != forms.Textarea:
                 field.widget.attrs["class"] = "form-control"
+                
+        # Formata a data para o formato esperado pelo input type="date"
+        if self.instance and self.instance.pk and self.instance.data_fato:
+            self.initial['data_fato'] = self.instance.data_fato.strftime('%Y-%m-%d')
 
         # Define os labels personalizados dos selects
         self.fields["sexo"].empty_label = "Selecione o sexo"
@@ -84,6 +89,23 @@ class OcorrenciaForm(forms.ModelForm):
             return Decimal(valor)
         except (InvalidOperation, TypeError):
             raise forms.ValidationError("Informe uma longitude válida (ex: -52.315527)")
+            
+    def clean_rg_autor(self):
+        valor = self.cleaned_data.get("rg_autor")
+        if valor:
+            # Remove qualquer caractere não numérico
+            valor_limpo = ''.join(c for c in str(valor) if c.isdigit())
+            
+            # Verifica se o valor contém apenas dígitos
+            if valor_limpo != str(valor):
+                raise forms.ValidationError("O RG deve conter apenas números, sem pontos ou outros caracteres.")
+                
+            # Verifica se o valor é positivo
+            if int(valor_limpo) <= 0:
+                raise forms.ValidationError("O RG deve ser um número positivo.")
+                
+            return valor_limpo
+        return valor
 
 
 class CidadeForm(forms.ModelForm):
