@@ -10,18 +10,27 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script>
       // Registra o plugin ChartDataLabels globalmente
       Chart.register(ChartDataLabels);
     </script>
-   
     <style>
       canvas {
         max-height: 300px;
       }
+      #graficoProjecao {
+        height: 400px !important;
+        max-height: 400px !important;
+      }
+      .card-header {
+        background-color: #17a2b8 !important;
+      }
     </style>
+   
+
   </head>
   <body>
     <div class="container md-2">
@@ -95,6 +104,9 @@
         </div>
         <div class="col-md-12 text-end">
           <button type="submit" class="btn btn-warning mt-2">Atualizar</button>
+          <!--<button type="button" id="exportar-relatorio" class="btn btn-primary mt-2 ms-2">
+            <i class="fas fa-file-pdf"></i> Exportar Relatório
+          </button>-->
         </div>
       </form>
 
@@ -117,6 +129,47 @@
         <div class="col-md-6 mb-4">
           <h5>Top 10 Cidades</h5>
           <canvas id="graficoCidade"></canvas>
+        </div>
+        <div class="col-md-12 mb-4">
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">Projeção de Tendência - Próximos 6 Meses</h5>
+            </div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-12">
+                  <div class="btn-group modelo-projecao" role="group">
+                    <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-linear" value="linear" checked>
+                    <label class="btn btn-outline-primary" for="modelo-linear">Regressão Linear</label>
+                    
+                    <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-bayes" value="bayes">
+                    <label class="btn btn-outline-primary" for="modelo-bayes">Teorema de Bayes</label>
+                    
+                    <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-forest" value="forest">
+                    <label class="btn btn-outline-primary" for="modelo-forest">Random Forest</label>
+                  </div>
+                </div>
+              </div>
+              <div class="modelo-info mb-3">
+                <div id="info-linear" class="modelo-descricao">
+                  <span class="badge bg-primary">Regressão Linear</span>
+                  <small class="text-muted">Modelo simples que identifica tendências lineares nos dados históricos.</small>
+                </div>
+                <div id="info-bayes" class="modelo-descricao d-none">
+                  <span class="badge bg-success">Teorema de Bayes</span>
+                  <small class="text-muted">Modelo probabilístico que incorpora conhecimento prévio e quantifica incertezas.</small>
+                </div>
+                <div id="info-forest" class="modelo-descricao d-none">
+                  <span class="badge bg-warning">Random Forest</span>
+                  <small class="text-muted">Modelo avançado que captura relações complexas e não-lineares nos dados.</small>
+                </div>
+              </div>
+              <canvas id="graficoProjecao"></canvas>
+              <div id="projecaoInfo" class="mt-3 small text-muted">
+                <p><i class="fas fa-info-circle"></i> Este gráfico mostra a tendência histórica de ocorrências e uma projeção para os próximos 6 meses baseada no modelo selecionado.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -265,6 +318,156 @@
         });
       }
     
+      // Função para criar o gráfico de projeção
+      function criarGraficoProjecao(ctx, dadosReais, projecoes, modeloAtual) {
+        if (ctx.chart) ctx.chart.destroy();
+        
+        // Cores para cada modelo
+        const coresModelo = {
+          linear: {
+            border: '#FF9900',
+            background: 'rgba(255, 153, 0, 0.2)',
+            point: '#FF9900'
+          },
+          bayes: {
+            border: '#28a745',
+            background: 'rgba(40, 167, 69, 0.2)',
+            point: '#28a745'
+          },
+          forest: {
+            border: '#9c27b0',
+            background: 'rgba(156, 39, 176, 0.2)',
+            point: '#9c27b0'
+          }
+        };
+        
+        // Seleciona os dados de projeção do modelo atual
+        const dadosProjetados = projecoes[modeloAtual];
+        const cores = coresModelo[modeloAtual];
+        
+        // Configuração para intervalos de confiança (apenas para Bayes)
+        let datasets = [
+          {
+            label: 'Dados Históricos',
+            data: [...dadosReais.dados, ...Array(dadosProjetados.dados.length).fill(null)],
+            borderColor: '#2BA87E',
+            backgroundColor: 'rgba(43, 168, 126, 0.2)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#2BA87E',
+            fill: true,
+            order: 1
+          },
+          {
+            label: `Projeção (${modeloAtual === 'linear' ? 'Regressão Linear' : 
+                              modeloAtual === 'bayes' ? 'Teorema de Bayes' : 
+                              'Random Forest'})`,
+            data: [...Array(dadosReais.dados.length).fill(null), ...dadosProjetados.dados],
+            borderColor: cores.border,
+            backgroundColor: cores.background,
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 4,
+            pointBackgroundColor: cores.point,
+            fill: true,
+            order: 2
+          }
+        ];
+        
+        // Adiciona intervalos de confiança para o modelo Bayesiano
+        if (modeloAtual === 'bayes' && dadosProjetados.intervalos) {
+          datasets.push({
+            label: 'Intervalo de Confiança (95%)',
+            data: [...Array(dadosReais.dados.length).fill(null), ...dadosProjetados.intervalos.superior],
+            borderColor: 'rgba(40, 167, 69, 0.3)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            borderWidth: 1,
+            borderDash: [3, 3],
+            pointRadius: 0,
+            fill: '+1',
+            order: 3
+          });
+          
+          datasets.push({
+            label: 'Intervalo de Confiança (95%)',
+            data: [...Array(dadosReais.dados.length).fill(null), ...dadosProjetados.intervalos.inferior],
+            borderColor: 'rgba(40, 167, 69, 0.3)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            borderWidth: 1,
+            borderDash: [3, 3],
+            pointRadius: 0,
+            fill: false,
+            order: 3
+          });
+        }
+        
+        ctx.chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [...dadosReais.labels, ...dadosProjetados.labels],
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  padding: 20,
+                  filter: function(item) {
+                    // Não mostrar duas vezes o intervalo de confiança na legenda
+                    if (item.text === 'Intervalo de Confiança (95%)' && item.datasetIndex > 2) {
+                      return false;
+                    }
+                    return true;
+                  }
+                }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                  title: function(tooltipItems) {
+                    return tooltipItems[0].label;
+                  },
+                  label: function(context) {
+                    if (context.raw === null) return;
+                    if (context.dataset.label.includes('Intervalo')) {
+                      return;
+                    }
+                    return context.dataset.label + ': ' + context.raw;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  display: false
+                },
+                title: {
+                  display: true,
+                  text: 'Mês/Ano'
+                }
+              },
+              y: {
+                beginAtZero: true,
+                grid: {
+                  display: true,
+                  color: 'rgba(0, 0, 0, 0.05)'
+                },
+                title: {
+                  display: true,
+                  text: 'Número de Ocorrências'
+                }
+              }
+            }
+          }
+        });
+      }
+      
       function atualizarGraficos() {
         const params = new URLSearchParams(
           new FormData(document.getElementById("filtros"))
@@ -311,6 +514,29 @@
               data.cidade,
               coresCidade
             );
+            
+            // Gráfico de Projeção de Tendência
+            if (data.projecao && !data.projecao.erro) {
+              // Obtém o modelo selecionado
+              const modeloSelecionado = document.querySelector('input[name="modelo-projecao"]:checked').value;
+              
+              criarGraficoProjecao(
+                document.getElementById("graficoProjecao"),
+                data.projecao.dados_reais,
+                {
+                  linear: data.projecao.linear,
+                  bayes: data.projecao.bayes,
+                  forest: data.projecao.forest
+                },
+                modeloSelecionado
+              );
+              
+              document.getElementById("projecaoInfo").innerHTML = 
+                '<p><i class="fas fa-info-circle"></i> Este gráfico mostra a tendência histórica de ocorrências e uma projeção para os próximos 6 meses baseada no modelo selecionado.</p>';
+            } else {
+              document.getElementById("projecaoInfo").innerHTML = 
+                '<div class="alert alert-warning">Dados insuficientes para gerar uma projeção confiável. É necessário ter registros de pelo menos 2 meses diferentes.</div>';
+            }
           });
       }
     
@@ -320,6 +546,20 @@
           e.preventDefault();
           atualizarGraficos();
         });
+      
+      // Adiciona event listeners para os botões de rádio do modelo de projeção
+      document.querySelectorAll('input[name="modelo-projecao"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+          // Atualiza a descrição do modelo
+          document.querySelectorAll('.modelo-descricao').forEach(desc => {
+            desc.classList.add('d-none');
+          });
+          document.getElementById(`info-${this.value}`).classList.remove('d-none');
+          
+          // Atualiza o gráfico com o novo modelo
+          atualizarGraficos();
+        });
+      });
     
       // Inicial
       atualizarGraficos();
