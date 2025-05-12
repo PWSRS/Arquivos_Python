@@ -64,8 +64,8 @@ def dashboard_dados(request):
     dados_idade = []
 
     for faixa, (min_idade, max_idade) in faixas.items():
-        if faixa == 'PREJUDICADO':
-            # Para "PREJUDICADO", contamos separadamente (não é uma faixa etária numérica)
+        if faixa == 'Prejudicado':
+            # Para "Pejudicado", contamos separadamente (não é uma faixa etária numérica)
             count = qs.filter(idade__isnull=True).count()  # Ajuste conforme sua lógica
         else:
             count = qs.filter(idade__gte=min_idade, idade__lte=max_idade).count()

@@ -87,7 +87,7 @@
         </div>
         <div class="col-md-2">
           <label for="faixa_etaria" class="form-label">Faixa Etária</label>
-          <select id="faixa_etaria" name="faixa_etaria" class="form-select">
+          <select id="faixa_etaria" name="idade" class="form-select">
             <option value="">Todas</option>
                 <option value="0-10">0 até 10 anos</option>
                 <option value="11-20">11 até 20 anos</option>
@@ -99,14 +99,14 @@
                 <option value="71-80">71 até 80 anos</option>
                 <option value="81-90">81 até 90 anos</option>
                 <option value="91-100">91 até 100 anos</option>
-                <option value="PREJUDICADO">Prejudicado</option>
+                <option value="Prejudicado">Prejudicado</option>
           </select>
         </div>
         <div class="col-md-12 text-end">
           <button type="submit" class="btn btn-warning mt-2">Atualizar</button>
-          <!--<button type="button" id="exportar-relatorio" class="btn btn-primary mt-2 ms-2">
-            <i class="fas fa-file-pdf"></i> Exportar Relatório
-          </button>-->
+          <a href="{% url 'relatorio_dashboard' %}?{{ request.GET.urlencode }}" class="btn btn-primary mt-2 ms-2" target="_blank">
+            <i class="fas fa-file-pdf"></i> Gerar Relatório
+          </a>
         </div>
       </form>
 
@@ -138,15 +138,25 @@
             <div class="card-body">
               <div class="row mb-3">
                 <div class="col-md-12">
-                  <div class="btn-group modelo-projecao" role="group">
-                    <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-linear" value="linear" checked>
-                    <label class="btn btn-outline-primary" for="modelo-linear">Regressão Linear</label>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group modelo-projecao" role="group">
+                      <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-linear" value="linear" checked>
+                      <label class="btn btn-outline-primary" for="modelo-linear">Regressão Linear</label>
+                      
+                      <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-bayes" value="bayes">
+                      <label class="btn btn-outline-primary" for="modelo-bayes">Teorema de Bayes</label>
+                      
+                      <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-forest" value="forest">
+                      <label class="btn btn-outline-primary" for="modelo-forest">Random Forest</label>
+                    </div>
                     
-                    <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-bayes" value="bayes">
-                    <label class="btn btn-outline-primary" for="modelo-bayes">Teorema de Bayes</label>
-                    
-                    <input type="radio" class="btn-check" name="modelo-projecao" id="modelo-forest" value="forest">
-                    <label class="btn btn-outline-primary" for="modelo-forest">Random Forest</label>
+                    <div class="btn-group periodo-visualizacao" role="group">
+                      <input type="radio" class="btn-check" name="periodo-visualizacao" id="periodo-mensal" value="mensal" checked>
+                      <label class="btn btn-outline-secondary" for="periodo-mensal">Mensal</label>
+                      
+                      <input type="radio" class="btn-check" name="periodo-visualizacao" id="periodo-anual" value="anual">
+                      <label class="btn btn-outline-secondary" for="periodo-anual">Anual</label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -173,6 +183,8 @@
         </div>
       </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="..."></script>
+
     <script>
       let graficoMes, graficoSexo, graficoIdade, graficoCidade;
     
@@ -322,6 +334,9 @@
       function criarGraficoProjecao(ctx, dadosReais, projecoes, modeloAtual) {
         if (ctx.chart) ctx.chart.destroy();
         
+        // Obtém o período de visualização selecionado
+        const periodoSelecionado = document.querySelector('input[name="periodo-visualizacao"]:checked').value;
+        
         // Cores para cada modelo
         const coresModelo = {
           linear: {
@@ -449,7 +464,7 @@
                 },
                 title: {
                   display: true,
-                  text: 'Mês/Ano'
+                  text: periodoSelecionado === 'anual' ? 'Ano' : 'Mês/Ano'
                 }
               },
               y: {
@@ -468,101 +483,134 @@
         });
       }
       
-      function atualizarGraficos() {
-        const params = new URLSearchParams(
-          new FormData(document.getElementById("filtros"))
-        );
-    
-        fetch("{% url 'dashboard_dados' %}?" + params)
-          .then((response) => response.json())
-          .then((data) => {
-            // Gráfico de Ocorrências por Mês (Barra) - Cores dinâmicas
-            const maxMesValue = Math.max(...data.mes.dados);
-            const coresMes = data.mes.dados.map(value => getColorForValue(value, maxMesValue));
-            criarOuAtualizarGrafico(
-              document.getElementById("graficoMes"),
-              "bar",
-              data.mes,
-              coresMes
-            );
-    
-            // Gráfico de Ocorrências por Sexo (Pizza) - Cores fixas
-            const coresSexo = data.sexo.labels.map(label => getSexoColor(label));
-            criarOuAtualizarGrafico(
-              document.getElementById("graficoSexo"),
-              "pie",
-              data.sexo,
-              coresSexo  // Cores definidas para o gráfico de sexo
-            );
-    
-            // Gráfico de Ocorrências por Faixa Etária (Barra) - Cores dinâmicas
-            const maxIdadeValue = Math.max(...data.idade.dados);
-            const coresIdade = data.idade.dados.map(value => getColorForValue(value, maxIdadeValue));
-            criarOuAtualizarGrafico(
-              document.getElementById("graficoIdade"),
-              "bar",
-              data.idade,
-              coresIdade
-            );
-    
-            // Gráfico de Top 10 Cidades (Barra) - Cores dinâmicas
-            const maxCidadeValue = Math.max(...data.cidade.dados);
-            const coresCidade = data.cidade.dados.map(value => getColorForValue(value, maxCidadeValue));
-            criarOuAtualizarGrafico(
-              document.getElementById("graficoCidade"),
-              "bar",
-              data.cidade,
-              coresCidade
-            );
-            
-            // Gráfico de Projeção de Tendência
-            if (data.projecao && !data.projecao.erro) {
-              // Obtém o modelo selecionado
-              const modeloSelecionado = document.querySelector('input[name="modelo-projecao"]:checked').value;
-              
-              criarGraficoProjecao(
-                document.getElementById("graficoProjecao"),
-                data.projecao.dados_reais,
-                {
-                  linear: data.projecao.linear,
-                  bayes: data.projecao.bayes,
-                  forest: data.projecao.forest
-                },
-                modeloSelecionado
-              );
-              
-              document.getElementById("projecaoInfo").innerHTML = 
-                '<p><i class="fas fa-info-circle"></i> Este gráfico mostra a tendência histórica de ocorrências e uma projeção para os próximos 6 meses baseada no modelo selecionado.</p>';
-            } else {
-              document.getElementById("projecaoInfo").innerHTML = 
-                '<div class="alert alert-warning">Dados insuficientes para gerar uma projeção confiável. É necessário ter registros de pelo menos 2 meses diferentes.</div>';
-            }
-          });
+let timeoutId;
+
+// Função de atualização dos gráficos com debounce para evitar múltiplas requisições seguidas
+function debouncedAtualizarGraficos() {
+  clearTimeout(timeoutId);
+  timeoutId = setTimeout(() => {
+    atualizarGraficos();
+  }, 500); // Adicionando um delay de 500ms
+}
+
+function atualizarGraficos() {
+  const formData = new FormData(document.getElementById("filtros"));
+  
+  // Adicionar o período de visualização selecionado aos parâmetros
+  const periodoSelecionado = document.querySelector('input[name="periodo-visualizacao"]:checked').value;
+  formData.append('periodo-visualizacao', periodoSelecionado);
+  
+  const params = new URLSearchParams(formData);
+
+  fetch("{% url 'dashboard_dados' %}?" + params)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Falha na requisição');
       }
-    
-      document
-        .getElementById("filtros")
-        .addEventListener("submit", function (e) {
-          e.preventDefault();
-          atualizarGraficos();
-        });
+      return response.json();
+    })
+    .then((data) => {
+      // Gráfico de Ocorrências por Mês (Barra) - Cores dinâmicas
+      const maxMesValue = Math.max(...data.mes.dados);
+      const coresMes = data.mes.dados.map(value => getColorForValue(value, maxMesValue));
+      criarOuAtualizarGrafico(
+        document.getElementById("graficoMes"),
+        "bar",
+        data.mes,
+        coresMes
+      );
+
+      // Gráfico de Ocorrências por Sexo (Pizza) - Cores fixas
+      const coresSexo = data.sexo.labels.map(label => getSexoColor(label));
+      criarOuAtualizarGrafico(
+        document.getElementById("graficoSexo"),
+        "pie",
+        data.sexo,
+        coresSexo  // Cores definidas para o gráfico de sexo
+      );
+
+      // Gráfico de Ocorrências por Faixa Etária (Barra) - Cores dinâmicas
+      const maxIdadeValue = Math.max(...data.idade.dados);
+      const coresIdade = data.idade.dados.map(value => getColorForValue(value, maxIdadeValue));
+      criarOuAtualizarGrafico(
+        document.getElementById("graficoIdade"),
+        "bar",
+        data.idade,
+        coresIdade
+      );
+
+      // Gráfico de Top 10 Cidades (Barra) - Cores dinâmicas
+      const maxCidadeValue = Math.max(...data.cidade.dados);
+      const coresCidade = data.cidade.dados.map(value => getColorForValue(value, maxCidadeValue));
+      criarOuAtualizarGrafico(
+        document.getElementById("graficoCidade"),
+        "bar",
+        data.cidade,
+        coresCidade
+      );
       
-      // Adiciona event listeners para os botões de rádio do modelo de projeção
-      document.querySelectorAll('input[name="modelo-projecao"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-          // Atualiza a descrição do modelo
-          document.querySelectorAll('.modelo-descricao').forEach(desc => {
-            desc.classList.add('d-none');
-          });
-          document.getElementById(`info-${this.value}`).classList.remove('d-none');
-          
-          // Atualiza o gráfico com o novo modelo
-          atualizarGraficos();
-        });
-      });
+      // Gráfico de Projeção de Tendência
+      if (data.projecao && !data.projecao.erro) {
+        // Obtém o modelo selecionado
+        const modeloSelecionado = document.querySelector('input[name="modelo-projecao"]:checked').value;
+        
+        criarGraficoProjecao(
+          document.getElementById("graficoProjecao"),
+          data.projecao.dados_reais,
+          {
+            linear: data.projecao.linear,
+            bayes: data.projecao.bayes,
+            forest: data.projecao.forest
+          },
+          modeloSelecionado
+        );
+        
+        document.getElementById("projecaoInfo").innerHTML = 
+          '<p><i class="fas fa-info-circle"></i> Este gráfico mostra a tendência histórica de ocorrências e uma projeção para os próximos 6 meses baseada no modelo selecionado.</p>';
+      } else {
+        document.getElementById("projecaoInfo").innerHTML = 
+          '<div class="alert alert-warning">Dados insuficientes para gerar uma projeção confiável. É necessário ter registros de pelo menos 2 meses diferentes.</div>';
+      }
+    })
+    .catch(error => {
+      console.error('Erro ao obter os dados: ', error);
+    });
+}
+
+document
+  .getElementById("filtros")
+  .addEventListener("submit", function (e) {
+    e.preventDefault();
+    debouncedAtualizarGraficos();
+  });
+
+// Adiciona event listeners para os botões de rádio do modelo de projeção
+document.querySelectorAll('input[name="modelo-projecao"]').forEach(radio => {
+  radio.addEventListener('change', function() {
+    // Atualiza a descrição do modelo
+    document.querySelectorAll('.modelo-descricao').forEach(desc => {
+      desc.classList.add('d-none');
+    });
+    document.getElementById(`info-${this.value}`).classList.remove('d-none');
     
-      // Inicial
-      atualizarGraficos();
+    // Atualiza o gráfico com o novo modelo
+    debouncedAtualizarGraficos();
+  });
+});
+
+// Adiciona event listeners para os botões de alternância de período
+document.querySelectorAll('input[name="periodo-visualizacao"]').forEach(radio => {
+  radio.addEventListener('change', function() {
+    console.log(`Período alterado para: ${this.value}`);
+    
+    // Força uma nova requisição ao servidor para obter dados no formato correto (mensal ou anual)
+    debouncedAtualizarGraficos();
+  });
+});
+
+// Inicializa a atualização dos gráficos ao carregar a página
+document.addEventListener('DOMContentLoaded', debouncedAtualizarGraficos);
+
     </script>
     
   </body>
