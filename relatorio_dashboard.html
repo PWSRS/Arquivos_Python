@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Analítico - Dashboard de Ocorrências</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .header p {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 0;
+        }
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .section h2 {
+            color: #2980b9;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .section h3 {
+            color: #3498db;
+            margin-top: 20px;
+        }
+        .chart-container {
+            text-align: center;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            max-height: 300px;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        /* Estilo específico para o gráfico de projeção */
+        .chart-container.projecao img {
+            max-height: 350px; /* Altura maior para o gráfico de projeção */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .model-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .model-info h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .model-info p {
+            margin-bottom: 0;
+        }
+        .highlight {
+            background-color: #ffffcc;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Relatório Analítico - Dashboard de Ocorrências</h1>
+        <p>Gerado em: {{ data_geracao }}</p>
+        {% if filtros %}
+        <div class="filtros">
+            <p><strong>Filtros aplicados:</strong> {{ filtros }}</p>
+        </div>
+        {% endif %}
+        <div class="periodo">
+            <p><strong>Visualização:</strong> {% if periodo == "anual" %}Anual{% else %}Mensal{% endif %}</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Resumo Executivo</h2>
+        <p>Este relatório apresenta uma análise detalhada das ocorrências registradas no sistema, incluindo distribuição por mês, sexo, faixa etária e cidade. Também inclui projeções estatísticas para os próximos 6 meses baseadas em diferentes modelos matemáticos.</p>
+        
+        <p>Total de ocorrências analisadas: <strong>{{ total_ocorrencias }}</strong></p>
+        
+        {% if tendencia %}
+        <p>Tendência geral observada: <strong>{{ tendencia }}</strong></p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h2>Distribuição por Mês</h2>
+        <p>O gráfico abaixo mostra a distribuição de ocorrências ao longo dos meses:</p>
+        <div class="chart-container">
+            <img src="data:image/png;base64,{{ grafico_mes }}" alt="Gráfico de Ocorrências por Mês">
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Quantidade</th>
+                    <th>Percentual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mes, valor, percentual in dados_mes %}
+                <tr>
+                    <td>{{ mes }}</td>
+                    <td>{{ valor }}</td>
+                    <td>{{ percentual }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <p>{{ analise_mes }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Distribuição por Sexo</h2>
+        <p>O gráfico abaixo mostra a distribuição de ocorrências por sexo:</p>
+        <div class="chart-container">
+            <img src="data:image/png;base64,{{ grafico_sexo }}" alt="Gráfico de Ocorrências por Sexo">
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Sexo</th>
+                    <th>Quantidade</th>
+                    <th>Percentual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sexo, valor, percentual in dados_sexo %}
+                <tr>
+                    <td>{{ sexo }}</td>
+                    <td>{{ valor }}</td>
+                    <td>{{ percentual }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <p>{{ analise_sexo }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Distribuição por Faixa Etária</h2>
+        <p>O gráfico abaixo mostra a distribuição de ocorrências por faixa etária:</p>
+        <div class="chart-container">
+            <img src="data:image/png;base64,{{ grafico_idade }}" alt="Gráfico de Ocorrências por Faixa Etária">
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Faixa Etária</th>
+                    <th>Quantidade</th>
+                    <th>Percentual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for faixa, valor, percentual in dados_idade %}
+                <tr>
+                    <td>{{ faixa }}</td>
+                    <td>{{ valor }}</td>
+                    <td>{{ percentual }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <p>{{ analise_idade }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Top 10 Cidades</h2>
+        <p>O gráfico abaixo mostra as 10 cidades com maior número de ocorrências:</p>
+        <div class="chart-container">
+            <img src="data:image/png;base64,{{ grafico_cidade }}" alt="Gráfico de Top 10 Cidades">
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Cidade</th>
+                    <th>Quantidade</th>
+                    <th>Percentual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cidade, valor, percentual in dados_cidade %}
+                <tr>
+                    <td>{{ cidade }}</td>
+                    <td>{{ valor }}</td>
+                    <td>{{ percentual }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <p>{{ analise_cidade }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Projeções para os Próximos {% if periodo == "anual" %}2 Anos{% else %}6 Meses{% endif %}</h2>
+        <p>Com base nos dados históricos, foram geradas projeções para os próximos {% if periodo == "anual" %}2 anos{% else %}6 meses{% endif %} utilizando três modelos estatísticos diferentes:</p>
+        
+        <div class="chart-container projecao">
+            <img src="data:image/png;base64,{{ grafico_projecao }}" alt="Gráfico de Projeção de Tendência">
+        </div>
+        
+        <div class="model-info">
+            <h4>Modelo de Regressão Linear</h4>
+            <p>Este modelo identifica tendências lineares nos dados históricos e as projeta para o futuro. É um modelo simples e direto que funciona bem quando há uma tendência clara e consistente.</p>
+            <p>Projeção média para os próximos {% if periodo == "anual" %}2 anos: <strong>{{ media_projecao_linear }}</strong> ocorrências por ano.{% else %}6 meses: <strong>{{ media_projecao_linear }}</strong> ocorrências por mês.{% endif %}</p>
+        </div>
+        
+        <div class="model-info">
+            <h4>Modelo Bayesiano</h4>
+            <p>Este modelo probabilístico incorpora conhecimento prévio e quantifica incertezas. Ele dá mais peso à média histórica à medida que a projeção avança no tempo, reconhecendo que a incerteza aumenta com a distância temporal.</p>
+            <p>Projeção média para os próximos {% if periodo == "anual" %}2 anos: <strong>{{ media_projecao_bayes }}</strong> ocorrências por ano.{% else %}6 meses: <strong>{{ media_projecao_bayes }}</strong> ocorrências por mês.{% endif %}</p>
+            <p>Intervalo de confiança (95%): <strong>{{ intervalo_confianca_bayes }}</strong></p>
+        </div>
+        
+        <div class="model-info">
+            <h4>Modelo Random Forest</h4>
+            <p>Este modelo avançado captura relações complexas e não-lineares nos dados. É capaz de identificar padrões sazonais e é menos sensível a outliers, tornando-o robusto para dados com variabilidade.</p>
+            <p>Projeção média para os próximos {% if periodo == "anual" %}2 anos: <strong>{{ media_projecao_forest }}</strong> ocorrências por ano.{% else %}6 meses: <strong>{{ media_projecao_forest }}</strong> ocorrências por mês.{% endif %}</p>
+        </div>
+        
+        <h3>Tabela de Projeções Mensais</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Regressão Linear</th>
+                    <th>Modelo Bayesiano</th>
+                    <th>Random Forest</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mes, linear, bayes, forest in tabela_projecoes %}
+                <tr>
+                    <td>{{ mes }}</td>
+                    <td>{{ linear }}</td>
+                    <td>{{ bayes }}</td>
+                    <td>{{ forest }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <h3>Análise das Projeções</h3>
+        <p>{{ analise_projecao }}</p>
+        
+        <div class="highlight">
+            <p><strong>Nota:</strong> Estas projeções são baseadas exclusivamente nos dados históricos disponíveis e devem ser interpretadas como tendências possíveis, não como previsões exatas. Fatores externos não capturados nos dados podem influenciar os resultados reais.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Relatório gerado automaticamente pelo Sistema de Análise de Ocorrências</p>
+        <p>© {{ ano_atual }} - Todos os direitos reservados</p>
+    </div>
+</body>
+</html>
